@@ -53,7 +53,7 @@ public partial class NetworkWindow : Window
         bindAddress = addresses.FirstOrDefault(); AllowGestures.IsEnabled = false;
         try { saved = PrivateStore.Load<SavedConnection>("client"); }
         catch (Exception) { Log("저장된 연결을 읽지 못했습니다. 새 QR로 다시 등록하세요."); }
-        voice.Activity += Log; vision.Activity += message => { Log(message); if (message.StartsWith("카메라 권한", StringComparison.Ordinal)) { SetCameraToggle(false); scanningQr = false; } };
+        voice.Activity += Log; vision.Activity += message => { Log(message); if (message.StartsWith("카메라 권한", StringComparison.Ordinal)) _ = Guard(StopCameraAsync); };
         vision.CameraFrame += async frame =>
         {
             if (closing || closed) return;
@@ -155,16 +155,17 @@ public partial class NetworkWindow : Window
     }
     private async Task AttachAsync(string address, string pin, PairResult grant)
     {
-        client = new RemoteClient(NativeOutput.ApplyAsync, () => NativeOutput.Health() with { SpeakAlerts = speakEnabled, Platform = "Windows" });
-        client.Activity += message =>
+        var attached = new RemoteClient(NativeOutput.ApplyAsync, () => NativeOutput.Health() with { SpeakAlerts = speakEnabled, Platform = "Windows" });
+        client = attached;
+        attached.Activity += message =>
         {
             Log(message);
-            if (client?.Connected != true) Dispatcher.BeginInvoke(async () => { if (!closed && !closing) { await Guard(StopCameraAsync); ConnectionStatus.Text = "연결이 끊겼습니다. 서버에 다시 연결해 주세요."; } });
+            if (!attached.Connected) Dispatcher.BeginInvoke(async () => { if (!closed && !closing && ReferenceEquals(client, attached)) { await Guard(StopCameraAsync); ConnectionStatus.Text = "연결이 끊겼습니다. 서버에 다시 연결해 주세요."; } });
         };
-        client.Alert += alert => Dispatcher.BeginInvoke(() => { if (!closing) { voice.Enabled = speakEnabled; voice.Speak(alert); } });
-        client.StateChanged += value => Dispatcher.BeginInvoke(() => RefreshDevices(value));
-        client.Gesture += sample => Dispatcher.BeginInvoke(() => Detection.Text = $"{sample.Gesture ?? "손 없음"} · 신뢰도 {sample.Confidence:P0}");
-        await client.ConnectAsync(address, pin, grant);
+        attached.Alert += alert => Dispatcher.BeginInvoke(() => { if (!closing && ReferenceEquals(client, attached)) { voice.Enabled = speakEnabled; voice.Speak(alert); } });
+        attached.StateChanged += value => Dispatcher.BeginInvoke(() => { if (ReferenceEquals(client, attached)) RefreshDevices(value); });
+        attached.Gesture += sample => Dispatcher.BeginInvoke(() => { if (ReferenceEquals(client, attached)) Detection.Text = $"{sample.Gesture ?? "손 없음"} · 신뢰도 {sample.Confidence:P0}"; });
+        await attached.ConnectAsync(address, pin, grant);
     }
     private async Task DisconnectAsync()
     {
@@ -179,9 +180,15 @@ public partial class NetworkWindow : Window
         await DisconnectAsync(); if (hub is not null) { await hub.DisposeAsync(); hub = null; }
         certificate?.Dispose(); certificate = null; StartServer.IsEnabled = loaded; AllowGestures.IsEnabled = false;
         refreshing = true; AllowGestures.IsChecked = false; refreshing = false;
+        rows.Clear(); state = null; target = null; EmptyClients.Visibility = Visibility.Visible;
+        ConnectionStatus.Text = "서버가 꺼져 있어요."; ClientsTitle.Text = "클라이언트"; SoundSummary.Text = "클라이언트를 연결해 주세요.";
     }
     private async Task StopCameraAsync()
-    { scanningQr = false; SetCameraToggle(false); await vision.StopCameraAsync(); if (client?.Connected == true) await client.StopCameraAsync(); Detection.Text = "카메라 꺼짐"; }
+    {
+        bool wasActive = scanningQr || CameraControl.IsChecked == true;
+        scanningQr = false; SetCameraToggle(false); await vision.StopCameraAsync();
+        if (wasActive && client?.Connected == true) await client.StopCameraAsync(); Detection.Text = "카메라 꺼짐";
+    }
     private void SetCameraToggle(bool value) { bool previous = refreshing; refreshing = true; CameraControl.IsChecked = value; refreshing = previous; }
     private void More_Click(object sender, RoutedEventArgs e)
     { DashboardMore.ContextMenu.PlacementTarget = DashboardMore; DashboardMore.ContextMenu.Placement = PlacementMode.Bottom; DashboardMore.ContextMenu.IsOpen = true; }

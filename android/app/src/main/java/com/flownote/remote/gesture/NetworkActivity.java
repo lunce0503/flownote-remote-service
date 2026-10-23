@@ -198,7 +198,7 @@ public final class NetworkActivity extends Activity {
     }
     private void setCameraToggle(boolean value){updatingControls=true;cameraToggle.setChecked(value);updatingControls=false;}
     @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){super.onRequestPermissionsResult(request,permissions,results);if(request==41){if(results.length>0&&results[0]==PackageManager.PERMISSION_GRANTED)startCamera();else log("카메라 권한이 거절됐어요. 수동 소리 제어는 사용할 수 있어요.");}}
-    private void stopCamera(){if(camera!=null){camera.close();camera=null;}if(link!=null)link.stopCamera();setCameraToggle(false);if(preview!=null){preview.setImageDrawable(null);preview.setVisibility(View.GONE);}if(detection!=null)detection.setText("카메라 꺼짐");}
+    private void stopCamera(){boolean wasActive=camera!=null;if(camera!=null){camera.close();camera=null;}if(wasActive&&link!=null)link.stopCamera();setCameraToggle(false);if(preview!=null){preview.setImageDrawable(null);preview.setVisibility(View.GONE);}if(detection!=null)detection.setText("카메라 꺼짐");}
     private void disconnect(){generation++;stopCamera();if(link!=null){link.close();link=null;}target=null;state=null;if(connectionStatus!=null)connectionStatus.setText("서버에 연결되지 않았어요.");markOffline();}
     @Override protected void onStop(){if(activeConnectionDialog!=null)activeConnectionDialog.dismiss();disconnect();super.onStop();}
     @Override protected void onDestroy(){disconnect();if(voice!=null)voice.close();worker.shutdownNow();super.onDestroy();}
