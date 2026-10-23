@@ -13,8 +13,11 @@ final class AssistantVoice implements AutoCloseable {
         this.status=status;
         speech=new TextToSpeech(context,result->{
             if(result!=TextToSpeech.SUCCESS){status.accept("음성 엔진을 사용할 수 없어 화면 알림을 유지합니다.");return;}
-            korean=speech.setLanguage(Locale.KOREAN)>=0;
-            ready=korean||speech.setLanguage(Locale.US)>=0;
+            var voices=speech.getVoices();
+            var selected=voices==null?null:voices.stream().filter(v->!v.isNetworkConnectionRequired()&&v.getLocale().getLanguage().equals("ko")).findFirst()
+                .orElseGet(()->voices.stream().filter(v->!v.isNetworkConnectionRequired()&&v.getLocale().getLanguage().equals("en")).findFirst().orElse(null));
+            korean=selected!=null&&selected.getLocale().getLanguage().equals("ko");
+            ready=selected!=null&&speech.setVoice(selected)==TextToSpeech.SUCCESS;
             speech.setAudioAttributes(new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ASSISTANT).setContentType(AudioAttributes.CONTENT_TYPE_SPEECH).build());
             if(!ready)status.accept("사용할 수 있는 음성이 없습니다. 기기의 TTS 음성 데이터를 확인하세요.");
         });

@@ -72,9 +72,9 @@ public final class NetworkActivity extends Activity {
         if(link==null||!link.connected()){log("서버에 연결한 뒤 카메라를 시작하세요.");return;}
         if(checkSelfPermission(android.Manifest.permission.CAMERA)!=PackageManager.PERMISSION_GRANTED){requestPermissions(new String[]{Manifest.permission.CAMERA},41);return;}
         stopCamera();camera=new CameraSource(this,new CameraSource.Listener(){
-            public void frame(byte[] jpeg){if(link!=null)link.frame(jpeg);runOnUiThread(()->{if(camera!=null){preview.setImageBitmap(BitmapFactory.decodeByteArray(jpeg,0,jpeg.length));detection.setText("카메라 전송 중 · 서버 판정 대기");}});}
+            public void frame(byte[] jpeg){if(link!=null)link.frame(jpeg);runOnUiThread(()->{if(camera!=null)preview.setImageBitmap(BitmapFactory.decodeByteArray(jpeg,0,jpeg.length));});}
             public void error(String message){log(message);runOnUiThread(NetworkActivity.this::stopCamera);}
-        });try{camera.start(rear.isChecked());rear.setEnabled(false);}catch(Exception e){log("카메라를 시작하지 못했습니다.");stopCamera();}
+        });try{camera.start(rear.isChecked());rear.setEnabled(false);detection.setText("카메라 전송 중 · 서버 판정 대기");}catch(Exception e){log("카메라를 시작하지 못했습니다.");stopCamera();}
     }
     @Override public void onRequestPermissionsResult(int request,String[] permissions,int[] results){super.onRequestPermissionsResult(request,permissions,results);if(request==41){if(results.length>0&&results[0]==PackageManager.PERMISSION_GRANTED)startCamera();else log("카메라 권한이 거절됐습니다. 수동 소리 제어는 계속 사용할 수 있습니다.");}}
     private void stopCamera(){if(camera!=null){camera.close();camera=null;}if(link!=null)link.stopCamera();if(rear!=null)rear.setEnabled(true);if(preview!=null)preview.setImageDrawable(null);if(detection!=null)detection.setText("카메라 꺼짐");}

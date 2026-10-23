@@ -18,6 +18,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
 import okhttp3.*;
@@ -76,6 +77,7 @@ final class RemoteLink implements AutoCloseable {
     private final JSONObject connection;
     private final ScheduledExecutorService timer=Executors.newSingleThreadScheduledExecutor();
     private final AtomicReference<String> pendingFrame=new AtomicReference<>();
+    private final AtomicBoolean ended=new AtomicBoolean();
     private final LinkedHashSet<String> applied=new LinkedHashSet<>(),alerts=new LinkedHashSet<>();
     private WebSocket socket;
     private volatile boolean connected,intentional;
@@ -113,12 +115,12 @@ final class RemoteLink implements AutoCloseable {
             @Override public void onClosing(WebSocket ws,int code,String reason){ws.close(code,null);ended();}
         });
     }
-    private void ended(){connected=false;pendingFrame.set(null);timer.shutdownNow();listener.disconnected(intentional);}
+    private void ended(){if(!ended.compareAndSet(false,true))return;connected=false;pendingFrame.set(null);timer.shutdownNow();listener.disconnected(intentional);}
     private void send(JSONObject json){if(socket!=null&&!socket.send(json.toString()))listener.error("메시지 전송 실패");}
     private void heartbeat(){try{
         int max=audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC);boolean muted=audio.isStreamMute(AudioManager.STREAM_MUSIC);
         if(!muted&&max>0)volume=audio.getStreamVolume(AudioManager.STREAM_MUSIC)/(float)max;
-        JSONObject sample=new JSONObject().put("volume",volume).put("muted",muted).put("outputReady",!audio.isVolumeFixed());
+        JSONObject sample=new JSONObject().put("volume",volume).put("muted",muted).put("outputReady",max>0&&!audio.isVolumeFixed());
         Intent battery=context.registerReceiver(null,new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
         if(battery!=null){int level=battery.getIntExtra(BatteryManager.EXTRA_LEVEL,-1),scale=battery.getIntExtra(BatteryManager.EXTRA_SCALE,-1);if(level>=0&&scale>0)sample.put("batteryPercent",level*100/scale);}
         send(new JSONObject().put("type","heartbeat").put("health",sample));
@@ -131,6 +133,8 @@ final class RemoteLink implements AutoCloseable {
             if(audio.isVolumeFixed())throw new IllegalStateException();
             if(!applied.contains(id)){
                 int max=audio.getStreamMaxVolume(AudioManager.STREAM_MUSIC);if(max<=0)throw new IllegalStateException();int index=(int)Math.round(requested*max);
+                int previous=(int)Math.round(volume*max);
+                if(index==previous&&Math.abs(requested-volume)>0.0001)index=Math.max(0,Math.min(max,index+(requested>volume?1:-1)));
                 audio.adjustStreamVolume(AudioManager.STREAM_MUSIC,AudioManager.ADJUST_UNMUTE,0);
                 audio.setStreamVolume(AudioManager.STREAM_MUSIC,index,0);
                 volume=audio.getStreamVolume(AudioManager.STREAM_MUSIC)/(float)max;
