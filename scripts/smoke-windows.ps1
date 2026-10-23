@@ -3,8 +3,8 @@ $ErrorActionPreference = 'Stop'
 if ($env:GITHUB_ACTIONS -ne 'true') { throw 'Run this settings smoke only on a disposable GitHub Actions runner' }
 Add-Type -AssemblyName UIAutomationClient
 Add-Type -AssemblyName UIAutomationTypes
-$profile = Join-Path $env:LOCALAPPDATA 'Flownote/Remote/settings.json'
-if (Test-Path $profile) { throw 'Smoke requires a fresh settings profile' }
+$settingsFile = Join-Path $env:LOCALAPPDATA 'Flownote/Remote/settings.json'
+if (Test-Path $settingsFile) { throw 'Smoke requires a fresh settings profile' }
 function Find-Control($root, $id) {
     $condition = [System.Windows.Automation.PropertyCondition]::new([System.Windows.Automation.AutomationElement]::AutomationIdProperty, $id)
     $control = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
@@ -39,8 +39,8 @@ try {
     $save = $app.Root.FindFirst([System.Windows.Automation.TreeScope]::Descendants, $condition)
     if (!$save) { throw 'Save button missing' }
     $save.GetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern).Invoke()
-    for ($attempt = 0; $attempt -lt 20 -and !(Test-Path $profile); $attempt++) { Start-Sleep -Milliseconds 250 }
-    $settings = Get-Content $profile -Raw | ConvertFrom-Json
+    for ($attempt = 0; $attempt -lt 20 -and !(Test-Path $settingsFile); $attempt++) { Start-Sleep -Milliseconds 250 }
+    $settings = Get-Content $settingsFile -Raw | ConvertFrom-Json
     if (!$settings.gesturesEnabled -or $settings.confidenceThreshold -ne 0.9 -or $settings.assistantEnabled) { throw 'Saved settings mismatch' }
     $app.Process.CloseMainWindow() | Out-Null
     if (!$app.Process.WaitForExit(10000)) { throw 'Application did not close' }
