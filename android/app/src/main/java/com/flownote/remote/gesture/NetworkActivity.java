@@ -202,6 +202,7 @@ public final class NetworkActivity extends Activity {
             var parts=new java.util.ArrayList<String>();
             if(!connected)parts.add("오프라인");else if(!active)parts.add(allowed?"사용 일시 중지":"서버에서 사용 중지");else{
                 parts.add(value.optString("platform","클라이언트"));parts.add(value.optBoolean("outputReady",true)?value.optBoolean("muted")?"소리 음소거":"소리 "+Math.round(value.optDouble("volume")*100)+"%":"출력 장치 확인 필요");
+                if(value.optBoolean("pointerReady"))parts.add("마우스 제어");
                 if(value.optBoolean("cameraActive"))parts.add("카메라 전송 중");if(id.equals(state.optString("voiceTarget"))&&value.optBoolean("speakAlerts",true))parts.add("음성 알림");if(id.equals(target))parts.add("제어 대상");
             }summary.setText(TextUtils.join(" · ",parts));
         }

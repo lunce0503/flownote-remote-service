@@ -74,6 +74,6 @@ internal static class Program
         using var speech = new SpeechSynthesizer(); using var wave = new MemoryStream();
         speech.SetOutputToWaveStream(wave); speech.Speak("Please check the server status.");
         Check(wave.Length > 1000, "OS assistant voice did not synthesize a WAV");
-        Console.WriteLine("PASS: real local hand skeleton model, landmark-only TLS/WSS routing, synthetic held-gesture mute, exact interface command, critical alert and real OS speech synthesis");
+        Console.WriteLine("PASS: real local hand skeleton model, landmark-only TLS/WSS routing, gesture suspension/manual mute, exact interface command, critical alert and real OS speech synthesis");
     }
 }

@@ -118,8 +118,13 @@ public sealed partial class RemoteHub
             if (!peers.TryGetValue(target,out peer) || !Enabled(peer) || !peer.InterfaceReady) return;
             if (peer.PendingControls.ContainsKey(command.CommandId)) return;
             foreach (var old in peer.PendingControls.Where(x => Environment.TickCount64-x.Value.Seen > 5000).Select(x => x.Key).ToArray()) peer.PendingControls.Remove(old);
-            if (peer.PendingControls.Count >= 32) throw new InvalidOperationException("화면 응답을 기다리고 있습니다.");
-            peer.PendingControls.Add(command.CommandId,(Environment.TickCount64, command.Action.StartsWith("pointer.", StringComparison.Ordinal)));
+            if (peer.PendingControls.Count >= 32 && command.Action != "pointer.up")
+            {
+                if (command.Action.StartsWith("pointer.", StringComparison.Ordinal)) return;
+                throw new InvalidOperationException("화면 응답을 기다리고 있습니다.");
+            }
+            if (peer.PendingControls.Count < 32)
+                peer.PendingControls.Add(command.CommandId,(Environment.TickCount64, command.Action.StartsWith("pointer.", StringComparison.Ordinal)));
         }
         await SendAsync(peer,new { type = "interface.set", command });
     }

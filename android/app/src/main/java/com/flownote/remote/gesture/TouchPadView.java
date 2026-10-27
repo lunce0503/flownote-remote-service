@@ -63,7 +63,7 @@ final class TouchPadView extends View {
             default:return true;
         }
     }
-    @Override public boolean performClick(){super.performClick();listener.input("pointer.click",0,0,0);return true;}
+    @Override public boolean performClick(){if(!isEnabled())return false;super.performClick();listener.input("pointer.click",0,0,0);return true;}
     @Override protected void onDetachedFromWindow(){cancelInput();super.onDetachedFromWindow();}
     @Override protected void onDraw(Canvas c){
         super.onDraw(c);float w=getWidth(),h=getHeight();c.drawColor(isEnabled()?0xffedf3ef:0xffeceeec);

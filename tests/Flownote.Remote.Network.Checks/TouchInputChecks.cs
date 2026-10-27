@@ -14,7 +14,8 @@ internal static class TouchInputChecks
         await using var hub=new RemoteHub(settings);await hub.StartAsync(IPAddress.Loopback,0,cert);string pin=Protocol.Pin(cert);
         var sourceGrant=hub.RegisterLocal("Phone");var otherGrant=hub.RegisterLocal("Other phone");var targetGrant=hub.RegisterLocal("Windows output");
         var received=new ConcurrentQueue<InterfaceCommand>();bool ready=true;
-        await using var target=new RemoteClient(c=>Task.FromResult(new OutputResult(true,c.Volume,c.Muted)),()=>new(.5f,false,Platform:"Windows",PointerReady:ready),c=>{received.Enqueue(c);return Task.FromResult(new InterfaceResult(true));});
+        var unblock=new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);bool stalled=false;
+        await using var target=new RemoteClient(c=>Task.FromResult(new OutputResult(true,c.Volume,c.Muted)),()=>new(.5f,false,Platform:"Windows",PointerReady:ready),async c=>{received.Enqueue(c);if(stalled)await unblock.Task;return new InterfaceResult(true);});
         await using var phone=new RemoteClient(c=>Task.FromResult(new OutputResult(true,c.Volume,c.Muted)),()=>new(.5f,false,Platform:"Android"));
         await using var other=new RemoteClient(c=>Task.FromResult(new OutputResult(true,c.Volume,c.Muted)),()=>new(.5f,false,Platform:"Android"));
         await target.ConnectAsync(hub.Address,pin,targetGrant);await phone.ConnectAsync(hub.Address,pin,sourceGrant);await other.ConnectAsync(hub.Address,pin,otherGrant);
@@ -40,6 +41,15 @@ internal static class TouchInputChecks
         hub.Revoke(sourceGrant.DeviceId);await Until(()=>received.Last().Action=="pointer.up");
         count=received.Count;await other.ControlAsync(targetGrant.DeviceId,"pointer.down");await Until(()=>received.Count==count+1);
         await Until(()=>received.Last().Action=="pointer.up"); // idle lease expiry
+        // A slow output must still receive release when all 32 ordinary ack slots are occupied.
+        count=received.Count;stalled=true;await other.ControlAsync(targetGrant.DeviceId,"pointer.down");await Until(()=>received.Count==count+1);
+        try
+        {
+            for(int i=0;i<31;i++)await hub.RouteControlAsync(targetGrant.DeviceId,new(Guid.NewGuid(),"precision","interface.reset"));
+            await other.ControlAsync(targetGrant.DeviceId,"pointer.up");await Task.Delay(150);Check(other.Connected,"Backpressure disconnected the touch source");
+        }
+        finally {stalled=false;unblock.TrySetResult();}
+        await Until(()=>received.Count==count+33&&received.Last().Action=="pointer.up");
         ready=false;await Until(()=>!hub.Snapshot().Devices.Single(d=>d.Id==targetGrant.DeviceId).PointerReady);
         count=received.Count;await other.ControlAsync(targetGrant.DeviceId,"pointer.click");await Task.Delay(100);Check(received.Count==count,"Pointer readiness bypassed");
         foreach(var invalid in new[]{new InterfaceCommand(Guid.NewGuid(),"precision","pointer.move",X:129),new InterfaceCommand(Guid.NewGuid(),"precision","pointer.click",X:1),new InterfaceCommand(Guid.NewGuid(),"precision","pointer.scroll",Value:4),new InterfaceCommand(Guid.NewGuid(),"precision","pointer.key"),new InterfaceCommand(Guid.NewGuid(),"precision","pointer.move",X:double.NaN)})Check(!RemoteHub.ValidManual(invalid),"Invalid pointer command accepted");
