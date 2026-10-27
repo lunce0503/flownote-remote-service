@@ -23,6 +23,7 @@ internal static class Program
     private static void Check(bool value, string name) { if (!value) throw new InvalidOperationException(name); }
     private static async Task RunAsync(VisionHost vision, string imagePath)
     {
+        await TouchPointerChecks.RunAsync();
         string invitation = new PairingLink("https://192.168.1.10:17843/", new string('A', 64), "123456", DateTimeOffset.UtcNow.ToUnixTimeSeconds() + 120).Encode();
         Check(QrCode.Decode(QrCode.Render(invitation)) == invitation, "Displayed connection QR could not be decoded");
         Console.WriteLine("PASS: actual displayed QR pixels round-trip through the QR decoder");
@@ -60,8 +61,10 @@ internal static class Program
         await client.SendSkeletonAsync(skeleton);Check(commands==0,"Legacy thumb unexpectedly executed action");
         await client.StopCameraAsync();
         for(int i=1;i<=6;i++){await client.SendSkeletonAsync(TestSkeletons.Frame(TestSkeletons.Pose("crossed"),sequence:i));await Task.Delay(150);}
+        Check(commands==0&&!muted,"Gesture command escaped suspension");
+        await client.CommandAsync(grant.DeviceId,"mute");
         for(int i=0;i<30&&!muted;i++)await Task.Delay(100);
-        Check(commands==1&&muted,"Skeleton gate -> authenticated client output acknowledgement failed");
+        Check(commands==1&&muted,"Manual output acknowledgement failed");
         await client.ControlAsync(grant.DeviceId,"interface.zoom_set",1.5);
         for(int i=0;i<30&&viewport.Zoom!=1.5;i++)await Task.Delay(100);
         Check(viewport.Zoom==1.5,"Exact interface control failed");
