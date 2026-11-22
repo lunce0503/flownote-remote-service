@@ -5,7 +5,7 @@ adb install "$apk_path"
 adb shell am start -W -n com.flownote.remote.gesture/.MainActivity
 adb shell pidof com.flownote.remote.gesture
 adb shell uiautomator dump /sdcard/flownote-remote-window.xml
-adb shell cat /sdcard/flownote-remote-window.xml | grep -q 'Flownote Remote'
+adb shell cat /sdcard/flownote-remote-window.xml | grep -q 'fot Remote'
 if adb shell dumpsys package com.flownote.remote.gesture | grep -q 'android.permission.CAMERA: granted=true'; then
   echo 'Camera must remain unrequested in this initial release' >&2
   exit 1

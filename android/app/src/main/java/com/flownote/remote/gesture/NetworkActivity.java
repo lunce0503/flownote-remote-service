@@ -54,7 +54,7 @@ public final class NetworkActivity extends Activity {
             if(Build.VERSION.SDK_INT>=30){var bars=insets.getInsets(WindowInsets.Type.systemBars()|WindowInsets.Type.displayCutout());view.setPadding(bars.left,bars.top,bars.right,bars.bottom);}
             else view.setPadding(insets.getSystemWindowInsetLeft(),insets.getSystemWindowInsetTop(),insets.getSystemWindowInsetRight(),insets.getSystemWindowInsetBottom());return insets;
         });
-        var header=row();var heading=column();text(heading,"Flownote Remote",26,INK);text(heading,"연결된 기기로, 손쉽게 제어하세요.",14,MUTED);header.addView(heading,new LinearLayout.LayoutParams(0,-2,1));
+        var header=row();var heading=column();text(heading,"fot Remote",26,INK);text(heading,"연결된 기기로, 손쉽게 제어하세요.",14,MUTED);header.addView(heading,new LinearLayout.LayoutParams(0,-2,1));
         Button more=button(header,"⋯",()->{});more.setTextSize(26);iconButton(more);more.setContentDescription("더 보기");more.setOnClickListener(v->showMore(more));content.addView(header);
         connectionStatus=text(content,"서버 PC의 QR로 연결을 시작하세요.",15,INK);connectionStatus.setPadding(dp(14),dp(12),dp(14),dp(12));connectionStatus.setBackground(shape(0xffe4ece6,12));connectionStatus.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE);
         var join=row();button(join,"QR로 연결",this::scanQr,1);button(join,"연결 코드",()->showConnection(null),1);content.addView(join);

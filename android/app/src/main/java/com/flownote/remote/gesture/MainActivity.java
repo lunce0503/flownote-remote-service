@@ -49,7 +49,7 @@ public final class MainActivity extends Activity {
             }
             return insets;
         });
-        label("Flownote Remote").setTextSize(28);
+        label("fot Remote").setTextSize(28);
         label("제스처 세부 설정 · 테스트용");
         label("이 기기의 합성 테스트 설정입니다. 실제 인식 기준과 동작은 서버 PC에서 설정합니다.");
         facing = spinner("기본 카메라 방향 (대시보드에서 선택 가능)", new String[]{"front", "back"});

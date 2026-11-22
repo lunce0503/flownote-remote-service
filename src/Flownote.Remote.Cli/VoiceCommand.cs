@@ -101,7 +101,7 @@ public static class VoiceCommand
             if (thread.Length != 0) parameters["threadId"] = thread;
             else
             {
-                parameters["developerInstructions"] = "Speak Korean by default. This is a Flownote Remote voice session. Explain results concisely. Do not claim a device command succeeded until actual device state confirms it.";
+                parameters["developerInstructions"] = "Speak Korean by default. This is a fot Remote voice session. Explain results concisely. Do not claim a device command succeeded until actual device state confirms it.";
                 if (tools) parameters["dynamicTools"] = new[] { new { type = "function", name = "flownote_remote",
                     description = MediaTools.Description, inputSchema = MediaTools.InputSchema } };
             }

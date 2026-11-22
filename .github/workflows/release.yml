@@ -210,6 +210,6 @@ jobs:
           cd artifacts/release
           sha256sum "Flownote-Remote-$version-android.apk" "Flownote-Remote-$version-windows-x64.exe" "Flownote-Remote-$version-linux-x64.tar.gz" > SHA256SUMS.txt
           sha256sum -c SHA256SUMS.txt
-          gh release create "$GITHUB_REF_NAME" "Flownote-Remote-$version-android.apk" "Flownote-Remote-$version-windows-x64.exe" "Flownote-Remote-$version-linux-x64.tar.gz" SHA256SUMS.txt --verify-tag --draft --prerelease --title "Flownote Remote $version · Linux CLI / Windows EXE / Android" --notes-file "../../release-notes/v$version.md"
+          gh release create "$GITHUB_REF_NAME" "Flownote-Remote-$version-android.apk" "Flownote-Remote-$version-windows-x64.exe" "Flownote-Remote-$version-linux-x64.tar.gz" SHA256SUMS.txt --verify-tag --draft --prerelease --title "fot Remote $version · Linux CLI / Windows EXE / Android" --notes-file "../../release-notes/v$version.md"
           test "$(gh release view "$GITHUB_REF_NAME" --json assets --jq '.assets | length')" = 4
           gh release edit "$GITHUB_REF_NAME" --draft=false --prerelease --latest=false

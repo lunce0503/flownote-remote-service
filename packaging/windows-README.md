@@ -1,4 +1,4 @@
-# Flownote Remote · Windows 시험판
+# fot Remote · Windows 시험판
 
 `Flownote-Remote-<version>-windows-x64.exe`를 내려받아 실행하세요.
 Windows x64용 단일 EXE이며 .NET 런타임·인식 모델·라이선스는 파일 안에 포함되어 있습니다.

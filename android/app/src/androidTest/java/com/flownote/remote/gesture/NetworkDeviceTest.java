@@ -167,7 +167,7 @@ public class NetworkDeviceTest {
             // Reuse the already authenticated grant through the real dashboard's encrypted saved-connection path.
             link.close();ConnectionStore.save(context,connection);android.app.Activity old=activity;instrumentation.runOnMainSync(old::finish);
             activity=instrumentation.startActivitySync(new Intent(context,NetworkActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
-            assertNotNull("Dashboard title missing",visible("Flownote Remote"));
+            assertNotNull("Dashboard title missing",visible("fot Remote"));
             assertNull("Advanced server address must not be on the home screen",find(instrumentation.getUiAutomation().getRootInActiveWindow(),"서버 HTTPS 주소"));
             click("더 보기");assertNotNull("Overflow settings missing",visible("연결 정보와 기록"));instrumentation.getUiAutomation().performGlobalAction(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_BACK);
             click("저장된 서버에 다시 연결");

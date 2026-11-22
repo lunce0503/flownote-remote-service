@@ -7,7 +7,7 @@ namespace Flownote.Remote.Cli
     public static class Cli
     {
         public const string Help = """
-            Flownote Remote CLI — Linux HTTPS/WSS server and Codex voice
+            fot Remote CLI — Linux HTTPS/WSS server and Codex voice
 
             flownote-remote server --listen <private IPv4> [--port 17843]
                 [--data-dir PATH]
